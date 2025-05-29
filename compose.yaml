@@ -1,0 +1,52 @@
+services:
+  demo:
+    image: nginxdemos/hello:latest
+    container_name: demo
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - internal
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./.htpasswd:/etc/nginx/.htpasswd:ro   # Needs to be aware of the .htpasswd file
+    depends_on:
+      - demo
+      - portainer
+      - dashboard
+    networks:
+      - internal
+  
+  dashboard:
+    build: ./dashboard-homepage
+    container_name: dashboard
+    restart: unless-stopped
+    networks:
+      - internal
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    command: -H unix:///var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - internal
+    ports:
+      - "9000:9000"
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  portainer_data:
